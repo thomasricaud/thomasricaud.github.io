@@ -86,35 +86,26 @@ Listen 443
 <VirtualHost monsite.com:443>
     ServerName monsite.com
     DocumentRoot "${SRVROOT}/monsite"
-    #https
+    # HTTPS
     SSLEngine on
     SSLCipherSuite ALL:!aNULL:!ADH:!eNULL:!LOW:!EXP:RC4+RSA:+HIGH:+MEDIUM:+SSLv3
     SSLCertificateFile "C:\Apache24\conf\monsite_com_cert.cer"
     SSLCertificateKeyFile "C:\Apache24\conf\monsite_com.key"
 
-# Activation http2 (http/https)
+    # Activation de HTTP/2
     Protocols h2 h2c http/1.1
 
-#Reverse Proxy
+    # Reverse Proxy
     ProxyPreserveHost On
     ProxyRequests off
-
     RequestHeader set X-Forwarded-Proto https
-
-    # Supprimer lorsque le filtre CSRFOriginFilter de hra-space permettra le X-Forwarded-Host multi host
     RequestHeader unset X-Forwarded-Host
 
-    # Enable HTTP Strict Transport Security (HSTS)
-    # Use HSTS to force client to use secure connections only (1year)
+    # Sécurité renforcée
     Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
-
-    # Enable the X-XSS-Protection
-    # Stops pages from loading when they detect Reflected Cross-Site Scripting (XSS) attacks
     Header set X-XSS-Protection "1; mode=block"
 
-## On redirige les requetes venat de l'extérieur vers le port d'écoute http de Domino
-    ProxyPass /secure !
-    ProxyPass /Shibboleth.sso !
+    # Redirection des requêtes externes vers le port HTTP de Domino
     ProxyPass / http://monsite.com:165/
     ProxyPassReverse / http://monsite.com:165/
 
@@ -124,11 +115,30 @@ Listen 443
 </VirtualHost>
 <VirtualHost monsite.com:80>
     ServerName monsite.com
-# GIFTS
     Redirect / https://monsite.com/
-
-#    #ERROR PAGE
-#    ErrorDocument 503 /error.html
+</VirtualHost>
 ```
 
 Cette configuration installe et configure Apache comme un reverse proxy SSL pour Lotus Domino, renforçant ainsi la sécurité du site.
+
+## Modification de la configuration Domino
+
+Ouvrez le client administrateur Lotus et accédez au document de configuration ('Current Server Document') de votre serveur Domino. Suivez les étapes ci-dessous pour modifier la configuration des ports :
+
+1. Naviguez vers l'onglet 'Ports'.
+
+2. Sélectionnez le sous-onglet 'Internet Ports', puis allez à la section 'Web'.
+
+3. Vérifiez et ajustez les paramètres suivants si nécessaire :
+- TCPIP/Port Number : configurez-le sur 165.
+
+- TCPIP/Port Status : choisissez 'Enabled'.
+
+- SSL/Port Status : sélectionnez 'Disabled'.
+
+Pour que les modifications prennent effet, procédez comme suit :
+
+4. Rendez-vous dans l'onglet 'Server', sous-onglet 'Status', puis dans le menu 'Server Tasks'.
+5. Faites un clic droit sur la tâche HTTP et sélectionnez 'Restart task' pour redémarrer le service HTTP. Cela permet d'appliquer les modifications effectuées.
+
+Ces réglages assurent que le serveur Domino utilise le port TCP/IP 165 pour les connexions web, avec le SSL désactivé pour ce port.
